@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../home_page.dart'; // Import home page
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../../home_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -18,6 +19,8 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
 
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -27,7 +30,6 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  // Validasi Nama
   String? _validateName(String? value) {
     if (value == null || value.isEmpty) {
       return 'Nama tidak boleh kosong';
@@ -38,7 +40,6 @@ class _RegisterPageState extends State<RegisterPage> {
     return null;
   }
 
-  // Validasi Email
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Email tidak boleh kosong';
@@ -50,7 +51,6 @@ class _RegisterPageState extends State<RegisterPage> {
     return null;
   }
 
-  // Validasi Password
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password tidak boleh kosong';
@@ -61,7 +61,6 @@ class _RegisterPageState extends State<RegisterPage> {
     return null;
   }
 
-  // Validasi Confirm Password
   String? _validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Konfirmasi password tidak boleh kosong';
@@ -72,56 +71,102 @@ class _RegisterPageState extends State<RegisterPage> {
     return null;
   }
 
-  // Handle Register
+  // Handle Register with Firebase
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
-      // Simulasi API call
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        // Create user with Firebase
+        UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
 
-      setState(() {
-        _isLoading = false;
-      });
+        // Update display name
+        await userCredential.user?.updateDisplayName(_nameController.text.trim());
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Registrasi berhasil!'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Registrasi berhasil!'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-          ),
-        );
+          );
 
-        // Navigate to home page
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
+          // Navigate to home page
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+        }
+      } on FirebaseAuthException catch (e) {
+        String errorMessage = 'Terjadi kesalahan';
+
+        if (e.code == 'weak-password') {
+          errorMessage = 'Password terlalu lemah';
+        } else if (e.code == 'email-already-in-use') {
+          errorMessage = 'Email sudah terdaftar';
+        } else if (e.code == 'invalid-email') {
+          errorMessage = 'Format email tidak valid';
+        } else if (e.code == 'operation-not-allowed') {
+          errorMessage = 'Operasi tidak diizinkan';
+        } else if (e.code == 'network-request-failed') {
+          errorMessage = 'Tidak ada koneksi internet';
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
-
-      // TODO: Navigate to home page or verify email
     }
   }
 
-  // Handle Social Login
   Future<void> _handleSocialLogin(String provider) async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Sign up dengan $provider'),
-        duration: const Duration(seconds: 1),
+        content: Text('Sign up dengan $provider belum tersedia'),
+        duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
       ),
     );
-    // TODO: Implement social login
   }
 
   @override
@@ -137,7 +182,6 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Register Card
                   Container(
                     padding: const EdgeInsets.all(32.0),
                     decoration: BoxDecoration(
@@ -160,7 +204,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     child: Column(
                       children: [
-                        // Sign Up Title
                         const Text(
                           'Sign Up',
                           style: TextStyle(
@@ -169,16 +212,6 @@ class _RegisterPageState extends State<RegisterPage> {
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                             letterSpacing: 2,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Font: Poppins Bold',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 12,
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w300,
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -365,19 +398,11 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         const SizedBox(height: 32),
 
-                        // Register Button - LANGSUNG KE HOMEPAGE
+                        // Register Button
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // Langsung navigate ke HomePage tanpa validasi
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const HomePage(),
-                                ),
-                              );
-                            },
+                            onPressed: _isLoading ? null : _handleRegister,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: Colors.black,
@@ -387,14 +412,25 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
-                              'Register',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Color(0xFF1976D2),
+                                      ),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Register',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
@@ -402,7 +438,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: 48),
 
-                  // Or Divider
                   Text(
                     'Or',
                     style: TextStyle(
@@ -418,17 +453,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Google Sign In
                       InkWell(
-                        onTap: () {
-                          // Langsung ke HomePage
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const HomePage(),
-                            ),
-                          );
-                        },
+                        onTap: () => _handleSocialLogin('Google'),
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           width: 64,
@@ -445,24 +471,31 @@ class _RegisterPageState extends State<RegisterPage> {
                             ],
                           ),
                           child: Center(
-                            child: Image.asset(
-                              'assets/images/google_logo.png',
+                            child: Container(
                               width: 32,
                               height: 32,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.g_mobiledata,
-                                  size: 40,
-                                  color: Color(0xFF4285F4),
-                                );
-                              },
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF4285F4),
+                                    Color(0xFFDB4437),
+                                    Color(0xFFF4B400),
+                                    Color(0xFF0F9D58),
+                                  ],
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.g_mobiledata_rounded,
+                                size: 28,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 24),
 
-                      // GitHub Sign In
                       InkWell(
                         onTap: () => _handleSocialLogin('GitHub'),
                         borderRadius: BorderRadius.circular(12),
@@ -481,17 +514,18 @@ class _RegisterPageState extends State<RegisterPage> {
                             ],
                           ),
                           child: Center(
-                            child: Image.asset(
-                              'assets/images/github_logo.png',
+                            child: Container(
                               width: 32,
                               height: 32,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.code,
-                                  size: 32,
-                                  color: Colors.black,
-                                );
-                              },
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.black87,
+                              ),
+                              child: const Icon(
+                                Icons.code_rounded,
+                                size: 20,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -500,7 +534,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: 48),
 
-                  // Sign In Link
                   GestureDetector(
                     onTap: () {
                       Navigator.pop(context);

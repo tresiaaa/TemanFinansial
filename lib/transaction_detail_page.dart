@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/home_page.dart';
+import 'add_notes_page.dart'; // Import add_notes_page
 
 class TransactionDetailPage extends StatelessWidget {
   final IconData icon;
@@ -210,11 +210,18 @@ class TransactionDetailPage extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      // TODO: Implement edit functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Edit functionality coming soon'),
-                          duration: Duration(seconds: 1),
+                      // Navigate to Edit mode
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddNotesPage(
+                            isEditMode: true,
+                            initialCategory: title,
+                            initialIcon: icon,
+                            initialAmount: amount.replaceAll(RegExp(r'[^0-9.]'), ''), // Remove currency symbols
+                            initialTransactionType: isExpense ? 'Expense' : 'Income',
+                            initialDate: date,
+                          ),
                         ),
                       );
                     },
