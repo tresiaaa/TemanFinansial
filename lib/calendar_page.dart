@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'no_records_page.dart';
-import 'add_notes_page.dart';  // Import Add Notes Page
+import 'add_notes_page.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -19,20 +19,16 @@ class _CalendarPageState extends State<CalendarPage> {
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
   
-  // Tanggal yang memiliki transaksi (hijau tua)
   final List<int> _datesWithTransactions = [10, 11, 20, 27];
 
-  // Fungsi untuk mendapatkan jumlah hari dalam bulan
   int _getDaysInMonth(int year, int month) {
     return DateTime(year, month + 1, 0).day;
   }
 
-  // Fungsi untuk mendapatkan hari pertama dalam bulan (0 = Sunday, 6 = Saturday)
   int _getFirstDayOfMonth(int year, int month) {
     return DateTime(year, month, 1).weekday % 7;
   }
 
-  // Fungsi untuk format tanggal
   String _formatDate(int day) {
     const months = [
       '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -378,7 +374,6 @@ class _CalendarPageState extends State<CalendarPage> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
             child: Column(
               children: [
-                // Day Headers
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Row(
@@ -395,7 +390,6 @@ class _CalendarPageState extends State<CalendarPage> {
                 ),
                 const SizedBox(height: 12),
                 
-                // Calendar Days Grid
                 Expanded(
                   child: GridView.builder(
                     padding: EdgeInsets.zero,
@@ -406,16 +400,14 @@ class _CalendarPageState extends State<CalendarPage> {
                       crossAxisSpacing: 6,
                       childAspectRatio: 0.95,
                     ),
-                    itemCount: 42, // 6 weeks
+                    itemCount: 42,
                     itemBuilder: (context, index) {
                       final dayNumber = index - firstDayOfWeek + 1;
                       
-                      // Empty cells before first day
                       if (index < firstDayOfWeek) {
                         return const SizedBox();
                       }
                       
-                      // Empty cells after last day
                       if (dayNumber > daysInMonth) {
                         return const SizedBox();
                       }
@@ -430,7 +422,6 @@ class _CalendarPageState extends State<CalendarPage> {
                             _selectedDay = dayNumber;
                           });
                           
-                          // Navigasi ke NoRecordsPage jika tidak ada transaksi
                           if (!hasTransaction) {
                             Navigator.push(
                               context,
@@ -489,11 +480,10 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
           child: IconButton(
             onPressed: () {
-              // Navigate to Add Notes Page
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const AddNotesPage(),
+                  builder: (context) => AddNotesPage(),
                 ),
               );
             },

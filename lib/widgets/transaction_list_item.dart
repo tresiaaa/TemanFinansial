@@ -9,6 +9,9 @@ class TransactionListItem extends StatelessWidget {
   final bool isExpense;
   final bool isTransfer;
   final String? date;
+  final String? transactionId;  // ✅ ADDED
+  final String? note;            // ✅ ADDED
+  final VoidCallback? onRefresh; // ✅ ADDED - Callback untuk refresh
 
   const TransactionListItem({
     super.key,
@@ -19,13 +22,16 @@ class TransactionListItem extends StatelessWidget {
     required this.isExpense,
     this.isTransfer = false,
     this.date,
+    this.transactionId,  // ✅ ADDED
+    this.note,           // ✅ ADDED
+    this.onRefresh,      // ✅ ADDED
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // Navigate to transaction detail page
+        // ✅ FIXED: Navigate dengan callback refresh
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -36,9 +42,16 @@ class TransactionListItem extends StatelessWidget {
               amount: amount,
               isExpense: isExpense,
               date: date ?? 'Sep 30, 2025',
+              transactionId: transactionId,  // ✅ Pass transaction ID
+              note: note,                    // ✅ Pass note
             ),
           ),
-        );
+        ).then((result) {
+          // ✅ Panggil refresh callback jika ada perubahan
+          if (result == true && onRefresh != null) {
+            onRefresh!();
+          }
+        });
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),

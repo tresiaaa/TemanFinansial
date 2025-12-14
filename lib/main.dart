@@ -2,27 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'presentation/pages/auth/login_page.dart';
 import 'presentation/pages/auth/register_page.dart';
+import 'category_selection_page.dart'; // ← SUDAH BENAR
+import 'add_notes_page.dart'; // ← SUDAH BENAR
 import 'home_page.dart';
 import 'profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Firebase with error handling
   try {
     await Firebase.initializeApp();
     print('✅ Firebase initialized successfully');
 
-    // IMPORTANT: Disable app verification for testing
-    // Remove this in production!
     await FirebaseAuth.instance.setSettings(
       appVerificationDisabledForTesting: true,
       forceRecaptchaFlow: false,
     );
     print('✅ App verification disabled for testing');
-    
+
   } catch (e) {
     print('❌ Firebase initialization error: $e');
   }
@@ -39,6 +39,8 @@ void main() async {
       statusBarBrightness: Brightness.light,
     ),
   );
+  
+  await initializeDateFormatting('id_ID', null);
   
   runApp(const TemanFinansialApp());
 }
@@ -64,6 +66,8 @@ class TemanFinansialApp extends StatelessWidget {
         '/register': (context) => const RegisterPage(),
         '/home': (context) => const HomePage(),
         '/profile': (context) => const ProfileScreen(),
+        '/category-selection': (context) => const CategorySelectionPage(),
+        '/add-notes': (context) => const AddNotesPage(),
       },
     );
   }
@@ -83,7 +87,6 @@ class AuthWrapper extends StatelessWidget {
         print('📊 Has data: ${snapshot.hasData}');
         print('📊 User: ${snapshot.data}');
         
-        // Loading
         if (snapshot.connectionState == ConnectionState.waiting) {
           print('⏳ Loading authentication state...');
           return const Scaffold(
@@ -100,7 +103,6 @@ class AuthWrapper extends StatelessWidget {
           );
         }
         
-        // Check for errors
         if (snapshot.hasError) {
           print('❌ Error: ${snapshot.error}');
           return Scaffold(
@@ -114,7 +116,6 @@ class AuthWrapper extends StatelessWidget {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      // Try again
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (_) => const AuthWrapper()),
@@ -128,13 +129,11 @@ class AuthWrapper extends StatelessWidget {
           );
         }
         
-        // User logged in
         if (snapshot.hasData && snapshot.data != null) {
           print('✅ User logged in: ${snapshot.data!.email}');
           return const HomePage();
         }
         
-        // Not logged in
         print('⚠️ No user logged in, showing LoginPage');
         return const LoginPage();
       },
