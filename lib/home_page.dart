@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'debug_firebase_page.dart';
 import 'package:intl/intl.dart';
 import 'calendar_page.dart';
 import 'profile_screen.dart';
@@ -8,6 +10,8 @@ import 'widgets/transaction_list_item.dart';
 import 'models/transaction_model.dart';
 import 'services/firestore_service.dart';
 import 'category_selection_page.dart';
+import 'presentation/pages/saving_page.dart'; // ✅ TAMBAHKAN IMPORT
+import 'presentation/pages/charts_page.dart'; // ✅ TAMBAHKAN IMPORT
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,6 +22,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final FirestoreService _firestoreService = FirestoreService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   
   int _selectedIndex = 0;
   String _selectedMonth = 'Sep';
@@ -27,6 +32,8 @@ class _HomePageState extends State<HomePage> {
   double _totalExpense = 0;
   double _totalIncome = 0;
   double _balance = 0;
+  
+  bool _isLoading = true;
   
   final List<String> _months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -39,19 +46,48 @@ class _HomePageState extends State<HomePage> {
     DateTime now = DateTime.now();
     _selectedMonth = _months[now.month - 1];
     _selectedYear = now.year;
-    _loadMonthlyData();
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeData();
+    });
   }
 
-  // ✅ FIXED: Tambahkan listener untuk lifecycle changes
+  Future<void> _initializeData() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      print('⚠️ No user found in HomePage, this should not happen!');
+      return;
+    }
+    
+    print('✅ User verified in HomePage: ${user.email}');
+    _firestoreService.debugCurrentUser();
+    
+    await _loadMonthlyData();
+    
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Reload data setiap kali widget di-rebuild
-    _loadMonthlyData();
+    if (!_isLoading) {
+      _loadMonthlyData();
+    }
   }
 
   Future<void> _loadMonthlyData() async {
+    if (_auth.currentUser == null) {
+      print('⚠️ Cannot load monthly data - no user logged in');
+      return;
+    }
+
     int monthIndex = _months.indexOf(_selectedMonth) + 1;
+    
+    print('🔄 Loading data for $monthIndex/$_selectedYear...');
     
     double expense = await _firestoreService.getTotalExpenseByMonth(_selectedYear, monthIndex);
     double income = await _firestoreService.getTotalIncomeByMonth(_selectedYear, monthIndex);
@@ -63,18 +99,21 @@ class _HomePageState extends State<HomePage> {
         _balance = income - expense;
         _refreshKey++;
       });
+      
+      print('✅ Data loaded - Expense: $expense, Income: $income, Balance: $_balance');
     }
   }
 
+  // ✅ PERBAIKAN: Tambahkan navigasi untuk Charts dan Saving
   void _onItemTapped(int index) {
     if (index == 1) {
+      // Add Transaction
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const CategorySelectionPage(),
         ),
       ).then((_) {
-        // ✅ FIXED: Selalu reload data setelah kembali dari add transaction
         _loadMonthlyData();
         
         if (mounted) {
@@ -84,7 +123,34 @@ class _HomePageState extends State<HomePage> {
         }
       });
     } 
+    else if (index == 2) {
+      // ✅ CHARTS - Navigasi ke halaman Charts
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ChartsPage(),
+        ),
+      ).then((_) {
+        setState(() {
+          _selectedIndex = 0;
+        });
+      });
+    }
+    else if (index == 3) {
+      // ✅ SAVING - Navigasi ke halaman Saving
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SavingPage(),
+        ),
+      ).then((_) {
+        setState(() {
+          _selectedIndex = 0;
+        });
+      });
+    }
     else if (index == 4) {
+      // Profile
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -97,6 +163,7 @@ class _HomePageState extends State<HomePage> {
       });
     } 
     else {
+      // Index 0 (Records) - tetap di halaman ini
       setState(() {
         _selectedIndex = index;
       });
@@ -141,12 +208,36 @@ class _HomePageState extends State<HomePage> {
       ),
     );
 
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                color: Color(0xFF1976D2),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Memuat data...',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 16,
+                  color: Colors.black54,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       extendBodyBehindAppBar: true,
       body: Column(
         children: [
-          // ✅ FIXED: Header dengan data yang ter-update otomatis
+          // Header
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -241,7 +332,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(width: 16),
                     
-                    // ✅ FIXED: Display real-time calculated values
                     Expanded(
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
@@ -279,6 +369,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           
+          // Transaction List
           Expanded(
             child: StreamBuilder<List<TransactionModel>>(
               key: ValueKey(_refreshKey),
@@ -296,6 +387,7 @@ class _HomePageState extends State<HomePage> {
                 }
 
                 if (snapshot.hasError) {
+                  print('❌ StreamBuilder error: ${snapshot.error}');
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -305,6 +397,17 @@ class _HomePageState extends State<HomePage> {
                         Text(
                           'Error: ${snapshot.error}',
                           style: const TextStyle(color: Colors.red),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _refreshKey++;
+                            });
+                            _loadMonthlyData();
+                          },
+                          child: const Text('Coba Lagi'),
                         ),
                       ],
                     ),

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'add_notes_page.dart';
 
 class NoRecordsPage extends StatelessWidget {
-  final String selectedDate;  // Parameter name harus selectedDate
+  final String selectedDate;
+  final DateTime? selectedDateTime;
   
   const NoRecordsPage({
     super.key,
     required this.selectedDate,
+    this.selectedDateTime,
   });
 
   @override
@@ -140,6 +143,17 @@ class NoRecordsPage extends StatelessWidget {
                 color: Colors.grey,
               ),
             ),
+            const SizedBox(height: 8),
+            
+            // Subtitle hint
+            Text(
+              'Tap + to add a transaction',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
           ],
         ),
       ),
@@ -159,7 +173,18 @@ class NoRecordsPage extends StatelessWidget {
         ),
         child: IconButton(
           onPressed: () {
-            // TODO: Navigate to add transaction page
+            // Navigate ke AddNotesPage (yang sudah ada kalkulator)
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AddNotesPage(),
+              ),
+            ).then((result) {
+              // Setelah selesai add transaksi, kembali ke CalendarPage
+              if (result == true) {
+                Navigator.pop(context, true);
+              }
+            });
           },
           icon: const Icon(
             Icons.add,

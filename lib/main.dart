@@ -5,8 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'presentation/pages/auth/login_page.dart';
 import 'presentation/pages/auth/register_page.dart';
-import 'category_selection_page.dart'; // ← SUDAH BENAR
-import 'add_notes_page.dart'; // ← SUDAH BENAR
+import 'category_selection_page.dart';
+import 'add_notes_page.dart';
 import 'home_page.dart';
 import 'profile_screen.dart';
 
@@ -60,6 +60,7 @@ class TemanFinansialApp extends StatelessWidget {
         fontFamily: 'Poppins',
         useMaterial3: false,
       ),
+      // ✅ PENTING: AuthWrapper sebagai home untuk auto-redirect
       home: const AuthWrapper(),
       routes: {
         '/login': (context) => const LoginPage(),
@@ -73,6 +74,7 @@ class TemanFinansialApp extends StatelessWidget {
   }
 }
 
+// ✅ AuthWrapper - Handles automatic navigation based on auth state
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -85,8 +87,8 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, snapshot) {
         print('📊 Connection state: ${snapshot.connectionState}');
         print('📊 Has data: ${snapshot.hasData}');
-        print('📊 User: ${snapshot.data}');
         
+        // Loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
           print('⏳ Loading authentication state...');
           return const Scaffold(
@@ -94,34 +96,17 @@ class AuthWrapper extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
+                  CircularProgressIndicator(
+                    color: Color(0xFF1976D2),
+                  ),
                   SizedBox(height: 16),
-                  Text('Loading...', style: TextStyle(fontFamily: 'Poppins')),
-                ],
-              ),
-            ),
-          );
-        }
-        
-        if (snapshot.hasError) {
-          print('❌ Error: ${snapshot.error}');
-          return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text('Error: ${snapshot.error}'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AuthWrapper()),
-                      );
-                    },
-                    child: const Text('Retry'),
+                  Text(
+                    'Loading...',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 16,
+                      color: Colors.black54,
+                    ),
                   ),
                 ],
               ),
@@ -129,11 +114,84 @@ class AuthWrapper extends StatelessWidget {
           );
         }
         
+        // Error state
+        if (snapshot.hasError) {
+          print('❌ Error: ${snapshot.error}');
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Authentication Error',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${snapshot.error}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AuthWrapper(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1976D2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Retry',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+        
+        // ✅ User is logged in - go to HomePage
         if (snapshot.hasData && snapshot.data != null) {
           print('✅ User logged in: ${snapshot.data!.email}');
+          print('👤 User ID: ${snapshot.data!.uid}');
           return const HomePage();
         }
         
+        // ✅ No user logged in - go to LoginPage
         print('⚠️ No user logged in, showing LoginPage');
         return const LoginPage();
       },

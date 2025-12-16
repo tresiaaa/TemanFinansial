@@ -359,26 +359,11 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ],
                           ),
-                          child: Center(
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF4285F4),
-                                    Color(0xFFDB4437),
-                                    Color(0xFFF4B400),
-                                    Color(0xFF0F9D58),
-                                  ],
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.g_mobiledata_rounded,
-                                size: 28,
-                                color: Colors.white,
-                              ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Image.asset(
+                              'assets/images/google_logo.png',
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ),
@@ -403,19 +388,11 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ],
                           ),
-                          child: Center(
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.black87,
-                              ),
-                              child: const Icon(
-                                Icons.code_rounded,
-                                size: 20,
-                                color: Colors.white,
-                              ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Image.asset(
+                              'assets/images/github_logo.png',
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ),

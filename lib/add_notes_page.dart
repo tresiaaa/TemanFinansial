@@ -44,6 +44,7 @@ class _AddNotesPageState extends State<AddNotesPage> {
   String _amount = '0';
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
+  bool _showCalculator = false; // ← TAMBAHAN: Kontrol tampilan kalkulator
 
   static const List<Map<String, dynamic>> _expenseCategories = [
     {'icon': Icons.shopping_cart, 'label': 'Shopping'},
@@ -117,6 +118,9 @@ class _AddNotesPageState extends State<AddNotesPage> {
     }
     
     _selectedTab = _getTabIndex(widget.initialTransactionType);
+    
+    // ← TAMBAHAN: Jika edit mode, langsung tampilkan kalkulator
+    _showCalculator = widget.isEditMode;
   }
 
   DateTime _parseDate(String dateString) {
@@ -226,7 +230,6 @@ class _AddNotesPageState extends State<AddNotesPage> {
       if (widget.isEditMode && widget.transactionId?.isNotEmpty == true) {
         await _firestoreService.updateTransaction(widget.transactionId!, transaction);
         if (mounted) {
-          // ✅ Pop semua routes dan kembali ke HomePage
           Navigator.of(context).popUntil((route) => route.isFirst);
           
           ScaffoldMessenger.of(context).showSnackBar(
@@ -241,7 +244,6 @@ class _AddNotesPageState extends State<AddNotesPage> {
       } else {
         await _firestoreService.addTransaction(transaction);
         if (mounted) {
-          // ✅ Pop semua routes dan kembali ke HomePage dengan result true
           Navigator.of(context).popUntil((route) => route.isFirst);
           
           ScaffoldMessenger.of(context).showSnackBar(
@@ -399,6 +401,23 @@ class _AddNotesPageState extends State<AddNotesPage> {
         ? _expenseCategories 
         : _incomeCategories;
     
+    // ← MODIFIKASI: Jika belum pilih kategori, hanya tampilkan grid kategori
+    if (!_showCalculator) {
+      return CategoryGrid(
+        categories: categories,
+        selectedCategory: _selectedCategory,
+        scrollController: _scrollController,
+        onCategoryTap: (label, icon) {
+          setState(() {
+            _selectedCategory = label;
+            _selectedIcon = icon;
+            _showCalculator = true; // ← Tampilkan kalkulator setelah pilih kategori
+          });
+        },
+      );
+    }
+    
+    // ← Jika sudah pilih kategori, tampilkan dengan kalkulator
     return SingleChildScrollView(
       child: SizedBox(
         height: MediaQuery.of(context).size.height - 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../home_page.dart';
+import '../../../services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -15,11 +16,11 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService();
+  
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void dispose() {
@@ -71,96 +72,118 @@ class _RegisterPageState extends State<RegisterPage> {
     return null;
   }
 
-  // Handle Register with Firebase
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+      setState(() => _isLoading = true);
 
       try {
-        // Create user with Firebase
-        UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
+        await _authService.registerWithEmail(
+          _emailController.text.trim(),
+          _passwordController.text,
+          _nameController.text.trim(),
         );
 
-        // Update display name
-        await userCredential.user?.updateDisplayName(_nameController.text.trim());
-
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Registrasi berhasil!'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          );
-
-          // Navigate to home page
+          _showSnackBar('Registrasi berhasil!', Colors.green);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const HomePage()),
           );
         }
       } on FirebaseAuthException catch (e) {
-        String errorMessage = 'Terjadi kesalahan';
-
-        if (e.code == 'weak-password') {
-          errorMessage = 'Password terlalu lemah';
-        } else if (e.code == 'email-already-in-use') {
-          errorMessage = 'Email sudah terdaftar';
-        } else if (e.code == 'invalid-email') {
-          errorMessage = 'Format email tidak valid';
-        } else if (e.code == 'operation-not-allowed') {
-          errorMessage = 'Operasi tidak diizinkan';
-        } else if (e.code == 'network-request-failed') {
-          errorMessage = 'Tidak ada koneksi internet';
-        }
-
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          );
+          _showSnackBar(_getErrorMessage(e.code), Colors.red);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: ${e.toString()}'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          );
+          _showSnackBar('Error: ${e.toString()}', Colors.red);
         }
       } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+        if (mounted) setState(() => _isLoading = false);
       }
     }
   }
 
-  Future<void> _handleSocialLogin(String provider) async {
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final userCredential = await _authService.signInWithGoogle();
+      
+      if (userCredential != null && mounted) {
+        _showSnackBar('Registrasi dengan Google berhasil!', Colors.green);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      } else if (mounted) {
+        _showSnackBar('Registrasi dibatalkan', Colors.orange);
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        _showSnackBar(_getErrorMessage(e.code), Colors.red);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Error: ${e.toString()}', Colors.red);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGitHubSignIn() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final userCredential = await _authService.signInWithGitHub();
+      
+      if (userCredential != null && mounted) {
+        _showSnackBar('Registrasi dengan GitHub berhasil!', Colors.green);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        _showSnackBar(_getErrorMessage(e.code), Colors.red);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Error: ${e.toString()}', Colors.red);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'weak-password':
+        return 'Password terlalu lemah';
+      case 'email-already-in-use':
+        return 'Email sudah terdaftar';
+      case 'invalid-email':
+        return 'Format email tidak valid';
+      case 'operation-not-allowed':
+        return 'Operasi tidak diizinkan';
+      case 'network-request-failed':
+        return 'Tidak ada koneksi internet';
+      case 'account-exists-with-different-credential':
+        return 'Akun sudah ada dengan metode login berbeda';
+      case 'popup-closed-by-user':
+        return 'Registrasi dibatalkan';
+      default:
+        return 'Terjadi kesalahan';
+    }
+  }
+
+  void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Sign up dengan $provider belum tersedia'),
-        duration: const Duration(seconds: 2),
+        content: Text(message),
+        backgroundColor: color,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
@@ -454,7 +477,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       InkWell(
-                        onTap: () => _handleSocialLogin('Google'),
+                        onTap: _isLoading ? null : _handleGoogleSignIn,
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           width: 64,
@@ -470,26 +493,11 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                             ],
                           ),
-                          child: Center(
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF4285F4),
-                                    Color(0xFFDB4437),
-                                    Color(0xFFF4B400),
-                                    Color(0xFF0F9D58),
-                                  ],
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.g_mobiledata_rounded,
-                                size: 28,
-                                color: Colors.white,
-                              ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Image.asset(
+                              'assets/images/google_logo.png',
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ),
@@ -497,7 +505,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       const SizedBox(width: 24),
 
                       InkWell(
-                        onTap: () => _handleSocialLogin('GitHub'),
+                        onTap: _isLoading ? null : _handleGitHubSignIn,
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           width: 64,
@@ -513,19 +521,11 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                             ],
                           ),
-                          child: Center(
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.black87,
-                              ),
-                              child: const Icon(
-                                Icons.code_rounded,
-                                size: 20,
-                                color: Colors.white,
-                              ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Image.asset(
+                              'assets/images/github_logo.png',
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ),

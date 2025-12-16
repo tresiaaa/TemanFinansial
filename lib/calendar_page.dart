@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'no_records_page.dart';
+import 'package:intl/intl.dart';
+import 'daily_transaction_page.dart';
 import 'add_notes_page.dart';
+import 'no_records_page.dart';  // ← TAMBAHAN
+import 'services/firestore_service.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -10,6 +13,8 @@ class CalendarPage extends StatefulWidget {
 }
 
 class _CalendarPageState extends State<CalendarPage> {
+  final FirestoreService _firestoreService = FirestoreService();
+  
   String _selectedMonth = 'Aug';
   int _selectedYear = 2025;
   int? _selectedDay;
@@ -19,7 +24,33 @@ class _CalendarPageState extends State<CalendarPage> {
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
   
-  final List<int> _datesWithTransactions = [10, 11, 20, 27];
+  List<int> _datesWithTransactions = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    DateTime now = DateTime.now();
+    _selectedMonth = _months[now.month - 1];
+    _selectedYear = now.year;
+    _loadTransactionDates();
+  }
+
+  Future<void> _loadTransactionDates() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    int monthIndex = _months.indexOf(_selectedMonth) + 1;
+    List<int> dates = await _firestoreService.getTransactionDates(_selectedYear, monthIndex);
+    
+    if (mounted) {
+      setState(() {
+        _datesWithTransactions = dates;
+        _isLoading = false;
+      });
+    }
+  }
 
   int _getDaysInMonth(int year, int month) {
     return DateTime(year, month + 1, 0).day;
@@ -30,12 +61,8 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   String _formatDate(int day) {
-    const months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
     final monthIndex = _months.indexOf(_selectedMonth) + 1;
-    return '${months[monthIndex]} $day, $_selectedYear';
+    return DateFormat('MMM dd, yyyy').format(DateTime(_selectedYear, monthIndex, day));
   }
 
   void _showMonthPicker() {
@@ -258,6 +285,7 @@ class _CalendarPageState extends State<CalendarPage> {
                               _selectedMonth = tempMonth;
                               _selectedYear = tempYear;
                             });
+                            _loadTransactionDates();
                             Navigator.of(dialogContext).pop();
                           },
                           style: ElevatedButton.styleFrom(
@@ -315,6 +343,8 @@ class _CalendarPageState extends State<CalendarPage> {
     final monthIndex = _months.indexOf(_selectedMonth) + 1;
     final daysInMonth = _getDaysInMonth(_selectedYear, monthIndex);
     final firstDayOfWeek = _getFirstDayOfMonth(_selectedYear, monthIndex);
+    final today = DateTime.now();
+    final isCurrentMonth = today.year == _selectedYear && today.month == monthIndex;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -330,7 +360,7 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
         ),
         title: const Text(
-          'Calender',
+          'Calendar',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 20,
@@ -367,101 +397,127 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
         ],
       ),
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 500),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Row(
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF1976D2),
+              ),
+            )
+          : Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  child: Column(
                     children: [
-                      _buildDayHeader('Sun'),
-                      _buildDayHeader('Mon'),
-                      _buildDayHeader('Tue'),
-                      _buildDayHeader('Wed'),
-                      _buildDayHeader('Thu'),
-                      _buildDayHeader('Fri'),
-                      _buildDayHeader('Sat'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                Expanded(
-                  child: GridView.builder(
-                    padding: EdgeInsets.zero,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 7,
-                      mainAxisSpacing: 6,
-                      crossAxisSpacing: 6,
-                      childAspectRatio: 0.95,
-                    ),
-                    itemCount: 42,
-                    itemBuilder: (context, index) {
-                      final dayNumber = index - firstDayOfWeek + 1;
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Row(
+                          children: [
+                            _buildDayHeader('Sun'),
+                            _buildDayHeader('Mon'),
+                            _buildDayHeader('Tue'),
+                            _buildDayHeader('Wed'),
+                            _buildDayHeader('Thu'),
+                            _buildDayHeader('Fri'),
+                            _buildDayHeader('Sat'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       
-                      if (index < firstDayOfWeek) {
-                        return const SizedBox();
-                      }
-                      
-                      if (dayNumber > daysInMonth) {
-                        return const SizedBox();
-                      }
-                      
-                      final isSelected = dayNumber == _selectedDay;
-                      final isToday = dayNumber == 20;
-                      final hasTransaction = _datesWithTransactions.contains(dayNumber);
-                      
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedDay = dayNumber;
-                          });
-                          
-                          if (!hasTransaction) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => NoRecordsPage(
-                                  selectedDate: _formatDate(dayNumber),
+                      Expanded(
+                        child: GridView.builder(
+                          padding: EdgeInsets.zero,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 7,
+                            mainAxisSpacing: 6,
+                            crossAxisSpacing: 6,
+                            childAspectRatio: 0.95,
+                          ),
+                          itemCount: 42,
+                          itemBuilder: (context, index) {
+                            final dayNumber = index - firstDayOfWeek + 1;
+                            
+                            if (index < firstDayOfWeek) {
+                              return const SizedBox();
+                            }
+                            
+                            if (dayNumber > daysInMonth) {
+                              return const SizedBox();
+                            }
+                            
+                            final isSelected = dayNumber == _selectedDay;
+                            final isToday = isCurrentMonth && dayNumber == today.day;
+                            final hasTransaction = _datesWithTransactions.contains(dayNumber);
+                            
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedDay = dayNumber;
+                                });
+                                
+                                if (hasTransaction) {
+                                  // Navigate to daily transaction page
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => DailyTransactionPage(
+                                        selectedDate: DateTime(_selectedYear, monthIndex, dayNumber),
+                                      ),
+                                    ),
+                                  ).then((_) => _loadTransactionDates());
+                                } else {
+                                  // ✅ Navigate to no records page
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => NoRecordsPage(
+                                        selectedDate: _formatDate(dayNumber),
+                                        selectedDateTime: DateTime(_selectedYear, monthIndex, dayNumber),
+                                      ),
+                                    ),
+                                  ).then((_) => _loadTransactionDates());
+                                }
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: hasTransaction
+                                      ? const Color(0xFF66BB6A) // Dark green
+                                      : isToday 
+                                          ? const Color(0xFFA5D6A7) // Medium green for today
+                                          : const Color(0xFFE8F5E9), // Light green
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: isSelected
+                                      ? Border.all(
+                                          color: const Color(0xFF1976D2),
+                                          width: 2,
+                                        )
+                                      : null,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '$dayNumber',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: hasTransaction || isToday
+                                        ? Colors.white
+                                        : Colors.black87,
+                                  ),
                                 ),
                               ),
                             );
-                          }
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: hasTransaction
-                                ? const Color(0xFF66BB6A)
-                                : isToday 
-                                    ? const Color(0xFFA5D6A7)
-                                    : const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '$dayNumber',
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
-                            ),
-                          ),
+                          },
                         ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 20),
         child: Container(
@@ -485,7 +541,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 MaterialPageRoute(
                   builder: (context) => AddNotesPage(),
                 ),
-              );
+              ).then((_) => _loadTransactionDates());
             },
             icon: const Icon(
               Icons.add,
