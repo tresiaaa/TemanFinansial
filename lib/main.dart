@@ -9,6 +9,8 @@ import 'category_selection_page.dart';
 import 'add_notes_page.dart';
 import 'home_page.dart';
 import 'profile_screen.dart';
+import 'manage_accounts_page.dart';
+import 'add_edit_account_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,6 +71,12 @@ class TemanFinansialApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/category-selection': (context) => const CategorySelectionPage(),
         '/add-notes': (context) => const AddNotesPage(),
+        '/manage-accounts': (context) => const ManageAccountsPage(),
+        '/add-account': (context) => const AddEditAccountPage(),
+        '/edit-account': (context) {
+          final account = ModalRoute.of(context)!.settings.arguments as dynamic;
+          return AddEditAccountPage(account: account);
+        },
       },
     );
   }
