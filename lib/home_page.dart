@@ -10,8 +10,8 @@ import 'widgets/transaction_list_item.dart';
 import 'models/transaction_model.dart';
 import 'services/firestore_service.dart';
 import 'category_selection_page.dart';
-import 'presentation/pages/saving_page.dart'; // ✅ TAMBAHKAN IMPORT
-import 'presentation/pages/charts_page.dart'; // ✅ TAMBAHKAN IMPORT
+import 'presentation/pages/savings/saving_page.dart'; // ✅ TAMBAHKAN IMPORT
+import 'presentation/pages/chart/chart_page.dart'; // ✅ TAMBAHKAN IMPORT
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

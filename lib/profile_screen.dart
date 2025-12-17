@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'category_selection_page.dart';
 import 'home_page.dart';
-import 'presentation/pages/saving_page.dart';
-import 'presentation/pages/charts_page.dart';
+import 'presentation/pages/savings/saving_page.dart';
+import 'presentation/pages/chart/chart_page.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
