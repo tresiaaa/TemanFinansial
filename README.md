@@ -1,16 +1,38 @@
-# flutter_application_1
+# TemanFinansial: Solusi Cerdas Pengelolaan Keuangan 💰
 
-A new Flutter project.
+TemanFinansial adalah aplikasi pengelola keuangan pribadi yang praktis dan lengkap. Aplikasi ini memudahkan Anda mencatat pemasukan dan pengeluaran, memantau kondisi uang lewat grafik yang mudah dipahami, serta mengatur target tabungan. TemanFinansial hadir untuk menggantikan catatan manual agar keuangan Anda lebih sehat, rapi, dan terencana.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 👥 Anggota Kelompok
 
-A few resources to get you started if this is your first Flutter project:
+| No | Nama | NIM |
+|:---:|:---|:---:|
+| 1 | Maisyah Aulia | 231401011 |
+| 2 | Tresia Napitupulu | 231401029 |
+| 3 | Virginia Simanungkalit | 231401062 |
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## ✨ Fitur Utama
+
+### 🔐 Autentikasi & Keamanan
+* **Login & Register**: Akses aman ke akun pribadi Anda menggunakan email.
+
+### 💸 Pelacakan Keuangan (Tracking)
+* **Input Transaksi**: Catat pengeluaran dan pemasukan dengan kategori, tanggal, dan keterangan.
+* **Kategori Kustom**: Sesuaikan kategori belanja Anda (Contoh: Makan, Transport, Gaji).
+
+### 📊 Analisis Kesehatan (Visualisasi Data)
+* **Grafik**: Memantau grafik garis untuk melihat arus kas harian, mingguan, atau bulanan.
+
+### 🎯 Pengelolaan Tujuan Keuangan
+* **Target Menabung**: Buat tujuan khusus (Contoh: "Liburan ke Bali - Rp 5.000.000").
+* **Progress Bar**: Indikator visual untuk melihat seberapa dekat Anda dengan target tujuan.
+* **Alokasi Dana**: Fitur untuk menyisihkan uang secara rutin ke tujuan tersebut.
+
+---
+
+## 📂 SRS
+
+[https://drive.google.com/file/d/your-link-here/view?usp=sharing](https://docs.google.com/document/d/1Qw-IHPANTv6VYE8RzWF_5Z29Plt2UhbbNDh5tkswCBQ/edit?usp=sharing)
