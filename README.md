@@ -28,8 +28,27 @@ TemanFinansial adalah aplikasi pengelola keuangan pribadi yang praktis dan lengk
 
 ### 🎯 Pengelolaan Tujuan Keuangan
 * **Target Menabung**: Buat tujuan khusus (Contoh: "Liburan ke Bali - Rp 5.000.000").
-* **Progress Bar**: Indikator visual untuk melihat seberapa dekat Anda dengan target tujuan.
 * **Alokasi Dana**: Fitur untuk menyisihkan uang secara rutin ke tujuan tersebut.
+
+
+---
+
+## 📖 Panduan Penggunaan
+
+### Langkah Awal
+1. **Buka aplikasi** dan tunggu hingga halaman utama muncul.
+2. **Daftar akun** menggunakan Email & Password atau login cepat dengan Google.
+
+### Mencatat Transaksi
+3. Pilih tombol **Tambah Transaksi (+)** di halaman utama.
+4. Masukkan jumlah uang, pilih **Kategori** (pemasukan/pengeluaran), tanggal, dan simpan.
+5. Gunakan fitur **Transaksi Berulang** untuk pengeluaran rutin bulanan.
+
+### Memantau Keuangan & Target
+6. Buka menu **Statistik** untuk melihat analisis pengeluaran dalam bentuk Diagram Pie dan Grafik Tren.
+7. Masuk ke menu **Tujuan Keuangan** untuk membuat target menabung baru.
+
+
 
 ---
 
